@@ -21,13 +21,11 @@ class TradingBot(QCAlgorithm):
         self.floor = 10
 
         #for stop loss
-        self.initialStopRisk = 0.98
+        self.initialStopRisk = 0.96
         self.trailingStopRisk = 0.9
 
         #schedules when to run
-        self.schedule.on(self.DateRules.EveryDay(self.symbol), \
-            self.TimeRules.AfterMarketOpen(self.symbol, 20), \
-                Action(self.EveryMarketOpen))
+        self.schedule.on(self.DateRules.EveryDay(self.symbol), self.TimeRules.AfterMarketOpen(self.symbol, 30), Action(self.EveryMarketOpen))
 
     #decides what to do with new data
     def on_data(self, data: Slice):
@@ -38,9 +36,9 @@ class TradingBot(QCAlgorithm):
         #looks at volatily in the past 30 days
         close = self.History(self.symbol, 31, Resolution.Daily)["close"]
         #takes standard deviations
-        todayvol = np.std(close[1:31])
-        yesterdayvol = np.std(close[0:30])
-        deltavol = (todayvol - yesterdayvol) / todayvol
+        todayvolatility = np.std(close[1:31])
+        yesterdayvolatilit = np.std(close[0:30])
+        deltavol = (todayvolatility - yesterdayvolatility) / todayvolatility
         self.lookback = round(self.lookback * (1 + deltavol))
 
         #make sure lookback is within the set ceiling and floor
@@ -72,7 +70,6 @@ class TradingBot(QCAlgorithm):
                 #set new stop price and the update
                 updateFields.stopPrice = self.securities[self.symbol].close * self.trailingStopRisk
                 self.stopMarketTicket.Update(updateFields)
-
                 self.Debug(updateFields.stopPrice)
 
             self.Plot("Data Chart", "Stop Price", self.stopMarketTicket.Get(OrderField.StopPrice))
